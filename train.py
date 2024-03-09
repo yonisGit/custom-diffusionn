@@ -71,8 +71,6 @@
 # END OF TERMS AND CONDITIONS
 
 
-
-
 # Attachment A
 
 # Use Restrictions
@@ -91,6 +89,7 @@
 # - To generate or disseminate information for the purpose to be used for administration of justice, law enforcement, immigration or asylum processes, such as predicting an individual will commit fraud/crime commitment (e.g. by text profiling, drawing causal relationships between assertions made in documents, indiscriminate and arbitrarily-targeted use).
 
 import argparse, os, sys, datetime, glob
+
 sys.path.append('stable-diffusion')
 import numpy as np
 import time
@@ -115,6 +114,25 @@ from ldm.util import instantiate_from_config
 
 
 def get_parser(**parser_kwargs):
+    '''
+
+    Args:
+        **parser_kwargs:
+
+    TODO ARGS:
+    base - path for the config of the experiment, for example: in multi-concept experiment, the path is configs/custom-diffusion/finetune_joint.yaml.
+    name - name of the experiment.
+    caption - the first target caption.
+    caption2 - the second target caption.
+    reg_datapath - the location path for the first concept regularization image numbers txt.
+    reg_datapath2 - the location path for the second concept regularization image numbers txt.
+    reg_caption - the location path for the first concept regularization captions txt.
+    reg_caption2 - the location path for the second concept regularization captions txt.
+
+    Returns:
+
+    '''
+
     def str2bool(v):
         if isinstance(v, bool):
             return v
@@ -253,7 +271,7 @@ def get_parser(**parser_kwargs):
         type=str,
         default="",
         help="path to target images",
-    ) 
+    )
     parser.add_argument(
         "--datapath2",
         type=str,
@@ -295,13 +313,13 @@ def get_parser(**parser_kwargs):
         type=int,
         default=0,
         help="repeat the target dataset by how many times. Used when training without regularization",
-    ) 
+    )
     parser.add_argument(
         "--batch_size",
         type=int,
         default=None,
         help="overwrite batch size",
-    )      
+    )
     return parser
 
 
@@ -510,6 +528,8 @@ class ImageLogger(Callback):
         self.log_images_kwargs = log_images_kwargs if log_images_kwargs else {}
         self.log_first_step = log_first_step
 
+    # TODO COMMENT: the @rank_zero_only annotation makes a function run only on the master server when running on several gpus.
+    #  This annotation is neccessary when you don't want to write logs (or do something else) more than once when you make distributed computing.
     @rank_zero_only
     def _testtube(self, pl_module, images, batch_idx, split):
         for k in images:
@@ -750,10 +770,10 @@ if __name__ == "__main__":
         if opt.batch_size is not None:
             config.data.params.batch_size = opt.batch_size
         if opt.modifier_token is not None:
-            config.model.params.cond_stage_config.params.modifier_token = opt.modifier_token 
+            config.model.params.cond_stage_config.params.modifier_token = opt.modifier_token
         if opt.repeat > 0:
             config.data.params.train.params.repeat = opt.repeat
-        
+
         if opt.resume_from_checkpoint_custom:
             config.model.params.ckpt_path = None
         if opt.freeze_model is not None:
@@ -765,7 +785,8 @@ if __name__ == "__main__":
             token_weights = st["cond_stage_model.transformer.text_model.embeddings.token_embedding.weight"]
             del st["cond_stage_model.transformer.text_model.embeddings.token_embedding.weight"]
             model.load_state_dict(st, strict=False)
-            model.cond_stage_model.transformer.text_model.embeddings.token_embedding.weight.data[:token_weights.shape[0]] = token_weights 
+            model.cond_stage_model.transformer.text_model.embeddings.token_embedding.weight.data[
+            :token_weights.shape[0]] = token_weights
         if opt.delta_ckpt is not None:
             st = torch.load(opt.delta_ckpt)
             embed = None
@@ -781,7 +802,8 @@ if __name__ == "__main__":
             model.load_state_dict(st, strict=False)
             if embed is not None:
                 print("restoring embedding")
-                model.cond_stage_model.transformer.text_model.embeddings.token_embedding.weight.data[token_weights.shape[0]: token_weights.shape[0] + embed.shape[0]] = embed
+                model.cond_stage_model.transformer.text_model.embeddings.token_embedding.weight.data[
+                token_weights.shape[0]: token_weights.shape[0] + embed.shape[0]] = embed
 
         # trainer and callbacks
         trainer_kwargs = dict()
@@ -942,6 +964,7 @@ if __name__ == "__main__":
             print("++++ NOT USING LR SCALING ++++")
             print(f"Setting learning rate to {model.learning_rate:.2e}")
 
+
         # allow checkpointing via USR1
         def melk(*args, **kwargs):
             # run all checkpoint hooks
@@ -950,10 +973,12 @@ if __name__ == "__main__":
                 ckpt_path = os.path.join(ckptdir, "last.ckpt")
                 trainer.save_checkpoint(ckpt_path)
 
+
         def divein(*args, **kwargs):
             if trainer.global_rank == 0:
                 import pudb
                 pudb.set_trace()
+
 
         import signal
 
