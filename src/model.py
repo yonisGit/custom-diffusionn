@@ -103,6 +103,7 @@ from torchvision.utils import make_grid
 from ldm.models.autoencoder import VQModelInterface, IdentityFirstStage, AutoencoderKL
 import numpy as np
 
+# TODO: Changes included here...
 class CustomDiffusion(LatentDiffusion):
     def __init__(self,
                  freeze_model='crossattn-kv',
@@ -115,6 +116,7 @@ class CustomDiffusion(LatentDiffusion):
         self.cond_stage_trainable = cond_stage_trainable
         super().__init__(cond_stage_trainable=cond_stage_trainable, *args, **kwargs)
 
+        # TODO COMMENT: freezing the needed parts according to the configuration.
         if self.freeze_model == 'crossattn-kv':
             for x in self.model.diffusion_model.named_parameters():
                 if 'transformer_blocks' not in x[0]:

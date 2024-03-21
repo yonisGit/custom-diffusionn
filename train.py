@@ -529,7 +529,7 @@ class ImageLogger(Callback):
         self.log_first_step = log_first_step
 
     # TODO COMMENT: the @rank_zero_only annotation makes a function run only on the master server when running on several gpus.
-    #  This annotation is neccessary when you don't want to write logs (or do something else) more than once when you make distributed computing.
+    #  This annotation is neccessary when you don't want to write logs (or do something else like saving checkpoints) more than once when you make distributed computing.
     @rank_zero_only
     def _testtube(self, pl_module, images, batch_idx, split):
         for k in images:
@@ -755,6 +755,9 @@ if __name__ == "__main__":
         trainer_opt = argparse.Namespace(**trainer_config)
         lightning_config.trainer = trainer_config
 
+
+        ################# TODO : STARTING THE DIFFERENCE #################
+
         # model
         config.data.params.train.params.caption = opt.caption
         config.data.params.train.params.reg_caption = opt.reg_caption
@@ -804,6 +807,9 @@ if __name__ == "__main__":
                 print("restoring embedding")
                 model.cond_stage_model.transformer.text_model.embeddings.token_embedding.weight.data[
                 token_weights.shape[0]: token_weights.shape[0] + embed.shape[0]] = embed
+
+        ################# TODO : FINISHING THE DIFFERENCE #################
+
 
         # trainer and callbacks
         trainer_kwargs = dict()
